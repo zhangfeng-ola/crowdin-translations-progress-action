@@ -35,6 +35,7 @@ function getLanguagesProgress() {
     core.info('Retrieving translations progress from Crowdin...');
 
     const translationStatusApi = new TranslationStatus({
+        baseUrl: String(process.env.CROWDIN_BASE_URL),
         token: String(process.env.CROWDIN_PERSONAL_TOKEN)
     });
 
