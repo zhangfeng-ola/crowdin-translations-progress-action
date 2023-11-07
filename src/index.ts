@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import * as dotenv from 'dotenv';
-import {TranslationStatus} from '@crowdin/crowdin-api-client';
+import { TranslationStatus } from '@crowdin/crowdin-api-client';
 import fs from 'fs';
 
 dotenv.config();
@@ -29,6 +29,11 @@ function checkEnvironmentVariables(): void {
     if (!projectId) {
         throw Error('Missing environment variable: CROWDIN_PROJECT_ID');
     }
+
+    let baseUrl = process.env.CROWDIN_BASE_URL;
+    if (!baseUrl) {
+        throw Error('Missing environment variable: CROWDIN_BASE_URL');
+    }
 }
 
 function getLanguagesProgress() {
@@ -36,25 +41,28 @@ function getLanguagesProgress() {
 
     const translationStatusApi = new TranslationStatus({
         baseUrl: String(process.env.CROWDIN_BASE_URL),
-        token: String(process.env.CROWDIN_PERSONAL_TOKEN)
+        token: String(process.env.CROWDIN_PERSONAL_TOKEN),
     });
 
     return translationStatusApi
         .withFetchAll()
         .getProjectProgress(Number(process.env.CROWDIN_PROJECT_ID))
         .then((response) => {
-            let languages:any[] = [];
+            let languages: any[] = [];
 
             response.data.forEach(function (language) {
                 languages.push(language.data);
+                core.info(language.data.languageId + ' progress is ' + language.data.translationProgress);
             })
 
             languages.sort((a, b) => (a.translationProgress < b.translationProgress) ? 1 : -1)
 
             return languages;
         })
-        .catch(error => console.error(error))
-    ;
+        .catch(error => {
+            console.error('translationStatusApi : ');
+            console.error(error);
+        });
 }
 
 function generateMarkdown(languages: any[] | void): string {

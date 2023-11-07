@@ -72,12 +72,16 @@ function checkEnvironmentVariables() {
     if (!projectId) {
         throw Error('Missing environment variable: CROWDIN_PROJECT_ID');
     }
+    let baseUrl = process.env.CROWDIN_BASE_URL;
+    if (!baseUrl) {
+        throw Error('Missing environment variable: CROWDIN_BASE_URL');
+    }
 }
 function getLanguagesProgress() {
     core.info('Retrieving translations progress from Crowdin...');
     const translationStatusApi = new crowdin_api_client_1.TranslationStatus({
         baseUrl: String(process.env.CROWDIN_BASE_URL),
-        token: String(process.env.CROWDIN_PERSONAL_TOKEN)
+        token: String(process.env.CROWDIN_PERSONAL_TOKEN),
     });
     return translationStatusApi
         .withFetchAll()
@@ -86,11 +90,15 @@ function getLanguagesProgress() {
         let languages = [];
         response.data.forEach(function (language) {
             languages.push(language.data);
+            core.info(language.data.languageId + ' progress is ' + language.data.translationProgress);
         });
         languages.sort((a, b) => (a.translationProgress < b.translationProgress) ? 1 : -1);
         return languages;
     })
-        .catch(error => console.error(error));
+        .catch(error => {
+        console.error('translationStatusApi : ');
+        console.error(error);
+    });
 }
 function generateMarkdown(languages) {
     core.info('Generate Markdown table...');
