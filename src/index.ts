@@ -9,8 +9,8 @@ async function run(): Promise<void> {
     try {
         checkEnvironmentVariables();
         let languages = await getLanguagesProgress();
-        let markdown = generateMarkdown(languages);
-        writeReadme(markdown);
+        sendToOutputs(languages)
+
         core.info('Done !');
     } catch (error) {
         if (error instanceof Error) core.setFailed(error.message);
@@ -52,7 +52,6 @@ function getLanguagesProgress() {
 
             response.data.forEach(function (language) {
                 languages.push(language.data);
-                core.info(language.data.languageId + ' progress is ' + language.data.translationProgress);
             })
 
             languages.sort((a, b) => (a.translationProgress < b.translationProgress) ? 1 : -1)
@@ -123,6 +122,17 @@ function writeReadme(markdown: string): void {
     fileContents = fileContents.replace(/<!-- CROWDIN-TRANSLATIONS-PROGRESS-ACTION-START -->.*<!-- CROWDIN-TRANSLATIONS-PROGRESS-ACTION-END -->/gs, markdown);
 
     fs.writeFileSync(file, fileContents);
+}
+
+function sendToOutputs(languages: any[] | void): void {
+    core.info('start to send to output ...');
+
+    let languageIds = languages?.map(language => language.languageId);
+    core.setOutput('languages', languageIds);
+    languages?.forEach(function (language, index: number) {
+        core.info(`language ${language.languageId} translationProgress = ${language.translationProgress}`);
+        core.setOutput(language.languageId, language.translationProgress);
+    });
 }
 
 /*function getFlagEmoji(countryCode: string) {
